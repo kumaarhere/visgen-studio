@@ -1,87 +1,143 @@
 import { motion } from "motion/react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import g1 from "@/assets/gallery-1.jpg";
+import g2 from "@/assets/gallery-2.jpg";
+import g3 from "@/assets/gallery-3.jpg";
+import g4 from "@/assets/gallery-4.jpg";
+import g5 from "@/assets/gallery-5.jpg";
+import g6 from "@/assets/gallery-6.jpg";
+
+const slides = [g1, g2, g3, g4, g5, g6, g1, g2];
 
 export function Hero() {
-  const [prompt, setPrompt] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [active, setActive] = useState(3);
+  const [mounted, setMounted] = useState(false);
 
-  const go = () => {
-    if (prompt.trim()) {
-      sessionStorage.setItem("visgen:prompt", prompt.trim());
-    }
-    navigate({ to: user ? "/studio" : "/auth" });
-  };
+  useEffect(() => {
+    setMounted(true);
+    const id = setInterval(() => {
+      setActive((a) => (a + 1) % slides.length);
+    }, 3500);
+    return () => clearInterval(id);
+  }, []);
+
+  const go = () => navigate({ to: user ? "/studio" : "/auth" });
 
   return (
-    <section className="relative pt-36 pb-24 sm:pt-44 sm:pb-32 overflow-hidden">
-      {/* Background mesh */}
+    <section className="relative pt-32 pb-16 sm:pt-40 sm:pb-24 overflow-hidden">
+      {/* Subtle background mesh */}
       <div className="absolute inset-0 bg-mesh pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="relative mx-auto max-w-5xl px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs text-muted-foreground mb-6"
-        >
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-          </span>
-          Powered by next-gen diffusion models
-        </motion.div>
-
+      <div className="relative mx-auto max-w-6xl px-6 text-center">
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.05 }}
-          className="text-4xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight"
+          transition={{ duration: 0.6 }}
+          className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight"
         >
-          Create stunning images
+          Create Stunning Images
           <br />
-          with <span className="text-gradient">just a prompt</span>
+          with <span className="text-gradient">Just a Prompt</span>
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="mt-6 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto"
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="mt-5 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto"
         >
-          Turn your ideas into high-quality visuals in seconds. No design skills, no
-          waiting — just imagination on demand.
+          Turn your ideas into high-quality visuals in seconds, no design skills needed.
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.25 }}
-          className="mt-10 max-w-2xl mx-auto"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mt-8 flex justify-center"
         >
-          <div className="glass-strong rounded-2xl p-2 flex items-center gap-2 shadow-elegant focus-within:border-primary/40 transition">
-            <Sparkles className="h-5 w-5 text-primary ml-3 shrink-0" />
-            <input
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && go()}
-              placeholder="A neon-lit Tokyo street at midnight, cinematic..."
-              className="flex-1 bg-transparent outline-none text-sm sm:text-base placeholder:text-muted-foreground/60 py-2"
-            />
-            <Button variant="glow" size="default" onClick={go}>
-              Generate
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Free 10 credits to start. No credit card required.
-          </p>
+          <Button variant="glow" size="lg" onClick={go} className="rounded-full">
+            Generate image
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </motion.div>
+      </div>
+
+      {/* 3D Curved Carousel */}
+      <div className="relative mt-14 sm:mt-20">
+        {/* Floor glow */}
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[80%] h-40 bg-primary/40 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-10 w-[40%] h-20 bg-primary/60 blur-[60px] rounded-full pointer-events-none" />
+
+        <div className="carousel-3d relative h-[380px] sm:h-[460px] mx-auto max-w-7xl">
+          <div
+            className="carousel-3d-track absolute inset-0 flex items-center justify-center"
+            style={{
+              transform: mounted ? `translateZ(-600px) rotateY(${-active * (360 / slides.length)}deg)` : undefined,
+            }}
+          >
+            {slides.map((src, i) => {
+              const angle = (360 / slides.length) * i;
+              return (
+                <div
+                  key={i}
+                  className="carousel-card absolute w-[180px] h-[260px] sm:w-[240px] sm:h-[340px] rounded-2xl overflow-hidden border border-border"
+                  style={{
+                    transform: `rotateY(${angle}deg) translateZ(420px)`,
+                    boxShadow:
+                      i === active
+                        ? "0 0 60px oklch(0.86 0.28 142 / 0.6), 0 0 120px oklch(0.86 0.28 142 / 0.3)"
+                        : "0 20px 40px -10px rgba(0,0,0,0.6)",
+                  }}
+                >
+                  <img
+                    src={src}
+                    alt={`AI generated artwork ${i + 1}`}
+                    className="w-full h-full object-cover"
+                    loading={i < 4 ? "eager" : "lazy"}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Feature row under carousel */}
+        <div className="relative mx-auto max-w-5xl px-6 mt-10 grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+          {[
+            {
+              t: "Lightning-Fast Generation",
+              d: "Type what you imagine, hit enter, and watch AI bring it to life in moments.",
+            },
+            {
+              t: "Multiple Styles & Customization",
+              d: "Pick a style and fine-tune details like color, lighting, and mood.",
+            },
+            {
+              t: "High-Resolution Downloads",
+              d: "Export your creations in high-quality resolution for print, web, or social.",
+            },
+          ].map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+            >
+              <h3 className="text-sm font-semibold text-foreground">{f.t}</h3>
+              <p className="mt-2 text-xs text-muted-foreground leading-relaxed max-w-[240px] mx-auto">
+                {f.d}
+              </p>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
