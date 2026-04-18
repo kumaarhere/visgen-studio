@@ -39,10 +39,13 @@ export function Navbar() {
                     {profile.credits}
                   </span>
                 )}
+                <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex rounded-full">
+                  <Link to="/dashboard">Dashboard</Link>
+                </Button>
                 <Button asChild variant="glow" size="sm" className="rounded-full">
                   <Link to="/studio">Studio</Link>
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => signOut()} aria-label="Sign out" className="rounded-full">
+                <Button variant="ghost" size="icon" onClick={() => signOut()} aria-label="Sign out" className="rounded-full hidden sm:inline-flex">
                   <LogOut className="h-4 w-4" />
                 </Button>
               </>
@@ -74,6 +77,18 @@ export function Navbar() {
             <a href="/#features" onClick={() => setOpen(false)} className="block px-4 py-3 rounded-xl text-sm hover:bg-foreground/5">Features</a>
             <a href="/#gallery" onClick={() => setOpen(false)} className="block px-4 py-3 rounded-xl text-sm hover:bg-foreground/5">Gallery</a>
             <a href="/#pricing" onClick={() => setOpen(false)} className="block px-4 py-3 rounded-xl text-sm hover:bg-foreground/5">Pricing</a>
+            {user && (
+              <>
+                <div className="h-px bg-border/60 my-1" />
+                <Link to="/dashboard" onClick={() => setOpen(false)} className="block px-4 py-3 rounded-xl text-sm hover:bg-foreground/5">Dashboard</Link>
+                <button
+                  onClick={() => { setOpen(false); signOut(); }}
+                  className="w-full text-left flex items-center gap-2 px-4 py-3 rounded-xl text-sm text-muted-foreground hover:bg-foreground/5"
+                >
+                  <LogOut className="h-4 w-4" /> Sign out
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
