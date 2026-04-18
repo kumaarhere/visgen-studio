@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { Repeat2 } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import g1 from "@/assets/gallery-1.jpg";
 import g2 from "@/assets/gallery-2.jpg";
@@ -22,6 +23,7 @@ const items = [
 export function Gallery() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   const remix = (prompt: string) => {
     sessionStorage.setItem("visgen:prompt", prompt);
@@ -37,45 +39,59 @@ export function Gallery() {
             Made by humans, <span className="text-gradient">painted by AI</span>
           </h2>
           <p className="mt-4 text-sm sm:text-base text-muted-foreground px-2">
-            Browse what creators are building. Click Remix to make it your own.
+            Tap or hover an image, then hit Remix to make it your own.
           </p>
         </div>
 
         <div className="columns-2 lg:columns-3 gap-3 sm:gap-5 [column-fill:_balance]">
-          {items.map((it, i) => (
-            <motion.figure
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: i * 0.05 }}
-              className={`relative mb-3 sm:mb-5 break-inside-avoid rounded-2xl overflow-hidden group cursor-pointer ${it.aspect}`}
-              onClick={() => remix(it.prompt)}
-            >
-              <img
-                src={it.src}
-                alt={it.prompt}
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              {/* Always-visible gradient on mobile, hover on desktop */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500" />
-              <figcaption className="absolute inset-x-0 bottom-0 p-2.5 sm:p-4 sm:translate-y-2 sm:group-hover:translate-y-0 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-500">
-                <p className="text-[10px] sm:text-xs text-foreground/90 line-clamp-2 mb-1.5 sm:mb-2">{it.prompt}</p>
-                <Button
-                  size="sm"
-                  variant="glow"
-                  className="text-[10px] sm:text-xs h-7 sm:h-8"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    remix(it.prompt);
-                  }}
+          {items.map((it, i) => {
+            const isActive = activeIdx === i;
+            return (
+              <motion.figure
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: i * 0.05 }}
+                onClick={() => setActiveIdx(isActive ? null : i)}
+                onMouseLeave={() => setActiveIdx((cur) => (cur === i ? null : cur))}
+                className={`relative mb-3 sm:mb-5 break-inside-avoid rounded-2xl overflow-hidden group cursor-pointer ${it.aspect}`}
+              >
+                <img
+                  src={it.src}
+                  alt={it.prompt}
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                {/* Overlay: hover (desktop) OR active state (mobile tap) */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent transition-opacity duration-500 ${
+                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  }`}
+                />
+                <figcaption
+                  className={`absolute inset-x-0 bottom-0 p-2.5 sm:p-4 transition-all duration-500 ${
+                    isActive
+                      ? "translate-y-0 opacity-100"
+                      : "translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100"
+                  }`}
                 >
-                  <Repeat2 className="h-3 w-3" /> Remix
-                </Button>
-              </figcaption>
-            </motion.figure>
-          ))}
+                  <p className="text-[10px] sm:text-xs text-foreground/90 line-clamp-2 mb-1.5 sm:mb-2">{it.prompt}</p>
+                  <Button
+                    size="sm"
+                    variant="glow"
+                    className="text-[10px] sm:text-xs h-7 sm:h-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      remix(it.prompt);
+                    }}
+                  >
+                    <Repeat2 className="h-3 w-3" /> Remix
+                  </Button>
+                </figcaption>
+              </motion.figure>
+            );
+          })}
         </div>
       </div>
     </section>
