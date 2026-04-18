@@ -1,7 +1,7 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Send, Download, Globe, Lock, Loader2, Repeat2 } from "lucide-react";
+import { Sparkles, Send, Download, Globe, Lock, Loader2, Repeat2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/site/Navbar";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,10 @@ interface ImageRow {
   created_at: string;
 }
 
+type ChatMessage =
+  | { id: string; role: "user"; text: string }
+  | { id: string; role: "assistant"; pending?: boolean; image?: ImageRow; error?: string };
+
 const TEMPLATES = [
   "Cyberpunk samurai under neon rain, cinematic 4k",
   "Surreal floating island with bioluminescent forest",
@@ -39,16 +43,15 @@ function StudioPage() {
   const [prompt, setPrompt] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [images, setImages] = useState<ImageRow[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Redirect to /auth if not signed in (client-side, fast UX)
+  // Redirect to /auth if not signed in
   useEffect(() => {
-    if (!authLoading && !user) {
-      window.location.href = "/auth";
-    }
+    if (!authLoading && !user) window.location.href = "/auth";
   }, [authLoading, user]);
 
-  // Hydrate prompt from landing CTA
+  // Hydrate prompt from landing CTA / gallery remix
   useEffect(() => {
     const stored = sessionStorage.getItem("visgen:prompt");
     if (stored) {
@@ -57,27 +60,49 @@ function StudioPage() {
     }
   }, []);
 
-  // Load history
+  // Load history -> seed conversation
   useEffect(() => {
     if (!user) return;
     supabase
       .from("images")
       .select("id, prompt, image_url, is_public, created_at")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(24)
+      .order("created_at", { ascending: true })
+      .limit(20)
       .then(({ data }) => {
-        if (data) setImages(data as ImageRow[]);
+        if (!data) return;
+        const seeded: ChatMessage[] = [];
+        (data as ImageRow[]).forEach((img) => {
+          seeded.push({ id: `u-${img.id}`, role: "user", text: img.prompt });
+          seeded.push({ id: `a-${img.id}`, role: "assistant", image: img });
+        });
+        setMessages(seeded);
       });
   }, [user]);
 
+  // Auto-scroll
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
   const handleGenerate = async () => {
-    if (!prompt.trim() || generating) return;
+    const text = prompt.trim();
+    if (!text || generating) return;
     if ((profile?.credits ?? 0) <= 0) {
       toast.error("You're out of credits. Upgrade to keep generating.");
       return;
     }
+
+    const uid = crypto.randomUUID();
+    const aid = crypto.randomUUID();
+    setMessages((m) => [
+      ...m,
+      { id: uid, role: "user", text },
+      { id: aid, role: "assistant", pending: true },
+    ]);
+    setPrompt("");
     setGenerating(true);
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -85,19 +110,21 @@ function StudioPage() {
         return;
       }
       const res = await generateImage({
-        data: { prompt: prompt.trim(), width: 1024, height: 1024, isPublic },
+        data: { prompt: text, width: 1024, height: 1024, isPublic },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (!res.ok) {
+        setMessages((m) => m.map((x) => (x.id === aid ? { ...x, pending: false, error: res.error } : x)));
         toast.error(res.error);
         return;
       }
-      setImages((prev) => [res.image as ImageRow, ...prev]);
-      setPrompt("");
+      setMessages((m) =>
+        m.map((x) => (x.id === aid ? { id: aid, role: "assistant", image: res.image as ImageRow } : x)),
+      );
       await refreshProfile();
-      toast.success("Image generated!");
     } catch (e) {
       console.error(e);
+      setMessages((m) => m.map((x) => (x.id === aid ? { ...x, pending: false, error: "Something went wrong" } : x)));
       toast.error("Something went wrong. Try again.");
     } finally {
       setGenerating(false);
@@ -106,19 +133,19 @@ function StudioPage() {
 
   const togglePublic = async (img: ImageRow) => {
     const next = !img.is_public;
-    setImages((p) => p.map((i) => (i.id === img.id ? { ...i, is_public: next } : i)));
+    setMessages((m) =>
+      m.map((x) => (x.role === "assistant" && x.image?.id === img.id ? { ...x, image: { ...img, is_public: next } } : x)),
+    );
     const { error } = await supabase.from("images").update({ is_public: next }).eq("id", img.id);
     if (error) {
       toast.error("Could not update visibility");
-      setImages((p) => p.map((i) => (i.id === img.id ? { ...i, is_public: !next } : i)));
     } else {
       toast.success(next ? "Published to feed" : "Made private");
     }
   };
 
-  const remix = (img: ImageRow) => {
-    setPrompt(img.prompt);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const remix = (text: string) => {
+    setPrompt(text);
   };
 
   if (authLoading || !user) {
@@ -130,22 +157,136 @@ function StudioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background bg-mesh">
+    <div className="min-h-screen bg-background bg-mesh flex flex-col">
       <Navbar />
-      <main className="pt-32 pb-24 mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+
+      <main className="flex-1 flex flex-col pt-24 pb-4 mx-auto w-full max-w-4xl px-3 sm:px-6">
+        {/* Header */}
+        <div className="mb-3 sm:mb-4 px-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             <span className="text-gradient">Studio</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Describe what you want to see. Be specific for best results.
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Chat with the model. Each prompt costs 1 credit.
           </p>
         </div>
 
-        {/* Prompt input */}
-        <div className="glass-strong rounded-2xl p-3 sm:p-4 shadow-elegant">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary ml-1.5 shrink-0" />
+        {/* Chat scroll area */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto rounded-2xl glass-strong p-3 sm:p-5 min-h-[50vh]"
+        >
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center py-10">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mb-4">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-sm font-medium mb-1">Start a conversation</p>
+              <p className="text-xs text-muted-foreground mb-5 max-w-xs">
+                Describe what you want to see. Try one of these:
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 max-w-md">
+                {TEMPLATES.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setPrompt(t)}
+                    className="text-[10px] sm:text-xs px-2.5 py-1.5 rounded-full glass hover:border-primary/40 transition text-muted-foreground hover:text-foreground"
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 sm:space-y-5">
+              <AnimatePresence initial={false}>
+                {messages.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    {msg.role === "assistant" && (
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                    )}
+
+                    <div className={`max-w-[85%] sm:max-w-[75%] ${msg.role === "user" ? "order-1" : ""}`}>
+                      {msg.role === "user" ? (
+                        <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-sm shadow-glow">
+                          {msg.text}
+                        </div>
+                      ) : msg.pending ? (
+                        <div className="rounded-2xl rounded-tl-sm bg-foreground/5 border border-border px-4 py-3 text-xs text-muted-foreground inline-flex items-center gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                          Painting your vision…
+                        </div>
+                      ) : msg.error ? (
+                        <div className="rounded-2xl rounded-tl-sm bg-destructive/10 border border-destructive/30 px-4 py-3 text-xs text-destructive">
+                          {msg.error}
+                        </div>
+                      ) : msg.image ? (
+                        <div className="rounded-2xl rounded-tl-sm overflow-hidden border border-border bg-foreground/5 group">
+                          <div className="relative aspect-square">
+                            <img
+                              src={msg.image.image_url}
+                              alt={msg.image.prompt}
+                              loading="lazy"
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 p-2">
+                            <Button asChild size="sm" variant="glass" className="text-[10px] h-7 px-2 flex-1">
+                              <a href={msg.image.image_url} download target="_blank" rel="noreferrer">
+                                <Download className="h-3 w-3" /> Save
+                              </a>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="glass"
+                              className="text-[10px] h-7 px-2 flex-1"
+                              onClick={() => msg.image && remix(msg.image.prompt)}
+                            >
+                              <Repeat2 className="h-3 w-3" /> Remix
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="glass"
+                              className="text-[10px] h-7 px-2"
+                              onClick={() => msg.image && togglePublic(msg.image)}
+                              aria-label={msg.image.is_public ? "Make private" : "Publish"}
+                            >
+                              {msg.image.is_public ? (
+                                <Globe className="h-3 w-3 text-primary" />
+                              ) : (
+                                <Lock className="h-3 w-3" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {msg.role === "user" && (
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-foreground/10 border border-border flex items-center justify-center shrink-0 order-2">
+                        <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+
+        {/* Composer */}
+        <div className="mt-3 sm:mt-4 glass-strong rounded-2xl p-2 sm:p-2.5 shadow-elegant">
+          <div className="flex items-end gap-2">
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary ml-1.5 mb-2.5 shrink-0" />
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -155,109 +296,32 @@ function StudioPage() {
                   handleGenerate();
                 }
               }}
-              rows={2}
-              placeholder="A cinematic portrait of..."
-              className="flex-1 bg-transparent outline-none text-sm sm:text-base placeholder:text-muted-foreground/60 resize-none py-2"
+              rows={1}
+              placeholder="Describe an image…"
+              className="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder:text-muted-foreground/60 resize-none py-2 max-h-32"
             />
             <Button
               variant="glow"
               onClick={handleGenerate}
               disabled={generating || !prompt.trim()}
-              className="shrink-0"
+              className="shrink-0 rounded-xl"
+              size="sm"
             >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {generating ? "Generating" : "Generate"}
             </Button>
           </div>
-          <div className="flex items-center justify-between flex-wrap gap-3 mt-3 px-1">
+          <div className="flex items-center justify-between flex-wrap gap-2 mt-2 px-1">
             <button
               onClick={() => setIsPublic((v) => !v)}
-              className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition"
+              className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition"
             >
-              {isPublic ? <Globe className="h-3.5 w-3.5 text-primary" /> : <Lock className="h-3.5 w-3.5" />}
-              {isPublic ? "Public to community" : "Private"}
+              {isPublic ? <Globe className="h-3 w-3 text-primary" /> : <Lock className="h-3 w-3" />}
+              {isPublic ? "Public" : "Private"}
             </button>
-            <span className="text-xs text-muted-foreground">
-              <span className="text-primary font-medium">{profile?.credits ?? 0}</span> credits remaining
+            <span className="text-[11px] text-muted-foreground">
+              <span className="text-primary font-medium">{profile?.credits ?? 0}</span> credits
             </span>
           </div>
-        </div>
-
-        {/* Templates */}
-        <div className="mt-5 flex flex-wrap gap-2">
-          {TEMPLATES.map((t) => (
-            <button
-              key={t}
-              onClick={() => setPrompt(t)}
-              className="text-xs px-3 py-1.5 rounded-full glass hover:border-primary/40 transition text-muted-foreground hover:text-foreground"
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-
-        {/* Grid */}
-        <div className="mt-12">
-          {images.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground text-sm">
-              Your generations will appear here.
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              <AnimatePresence>
-                {images.map((img) => (
-                  <motion.div
-                    key={img.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
-                    className="group relative aspect-square rounded-2xl overflow-hidden glass"
-                  >
-                    <img
-                      src={img.image_url}
-                      alt={img.prompt}
-                      loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent opacity-0 group-hover:opacity-100 transition" />
-                    <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 group-hover:opacity-100 transition translate-y-2 group-hover:translate-y-0">
-                      <p className="text-[11px] text-foreground/90 line-clamp-2 mb-2">{img.prompt}</p>
-                      <div className="flex items-center gap-1.5">
-                        <Button
-                          asChild
-                          size="sm"
-                          variant="glass"
-                          className="text-[10px] h-7 px-2"
-                        >
-                          <a href={img.image_url} download target="_blank" rel="noreferrer">
-                            <Download className="h-3 w-3" />
-                          </a>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="glass"
-                          className="text-[10px] h-7 px-2"
-                          onClick={() => remix(img)}
-                        >
-                          <Repeat2 className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="glass"
-                          className="text-[10px] h-7 px-2"
-                          onClick={() => togglePublic(img)}
-                        >
-                          {img.is_public ? <Globe className="h-3 w-3 text-primary" /> : <Lock className="h-3 w-3" />}
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
         </div>
       </main>
     </div>

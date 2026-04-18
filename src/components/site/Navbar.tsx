@@ -39,10 +39,13 @@ export function Navbar() {
                     {profile.credits}
                   </span>
                 )}
+                <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex rounded-full">
+                  <Link to="/dashboard">Dashboard</Link>
+                </Button>
                 <Button asChild variant="glow" size="sm" className="rounded-full">
                   <Link to="/studio">Studio</Link>
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => signOut()} aria-label="Sign out" className="rounded-full">
+                <Button variant="ghost" size="icon" onClick={() => signOut()} aria-label="Sign out" className="rounded-full hidden sm:inline-flex">
                   <LogOut className="h-4 w-4" />
                 </Button>
               </>
