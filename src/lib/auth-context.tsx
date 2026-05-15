@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+"use client";
+
+import { createContext, useContext, ReactNode } from "react";
+import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 
 interface Profile {
   id: string;
@@ -12,8 +13,8 @@ interface Profile {
 }
 
 interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
+  user: any;
+  session: any;
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
@@ -23,54 +24,30 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: session, status, update } = useSession();
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-    if (data) setProfile(data as Profile);
-  };
+  const loading = status === "loading";
 
-  useEffect(() => {
-    // Listener FIRST
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        // Defer to avoid deadlock
-        setTimeout(() => fetchProfile(sess.user.id), 0);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) fetchProfile(sess.user.id);
-      setLoading(false);
-    });
-
-    return () => sub.subscription.unsubscribe();
-  }, []);
+  const profile: Profile | null = session?.user ? {
+    id: (session.user as any).id,
+    email: session.user.email ?? null,
+    display_name: session.user.name ?? null,
+    avatar_url: session.user.image ?? null,
+    credits: (session.user as any).credits ?? 0,
+    plan: (session.user as any).plan ?? "free",
+  } : null;
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    await nextAuthSignOut({ callbackUrl: '/' });
   };
 
+  // Forces NextAuth to re-fetch the session from the DB (picks up new credits/plan)
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.id);
+    await update({ forceRefresh: true });
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user: session?.user ?? null, session, profile, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -25,6 +25,7 @@ const AccordionTrigger = React.forwardRef<
         "flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:underline text-left [&[data-state=open]>svg]:rotate-180",
         className,
       )}
+      suppressHydrationWarning={true}
       {...props}
     >
       {children}
