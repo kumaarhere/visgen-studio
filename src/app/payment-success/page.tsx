@@ -24,7 +24,9 @@ const PLAN_META: Record<string, { credits: number; label: string; icon: typeof Z
   },
 };
 
-export default function PaymentSuccessPage() {
+import { Suspense } from "react";
+
+function PaymentSuccessContent() {
   const { refreshProfile, profile } = useAuth();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") || "pro";
@@ -48,7 +50,7 @@ export default function PaymentSuccessPage() {
       }
     };
     refresh();
-  }, []);
+  }, [refreshProfile]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-background relative overflow-hidden">
@@ -151,5 +153,13 @@ export default function PaymentSuccessPage() {
         </motion.div>
       </motion.div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
