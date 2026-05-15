@@ -203,7 +203,13 @@ export function Navbar() {
                   </button>
 
                   {menuOpen && (
-                    <div className="absolute right-0 mt-2 w-72 z-[100] rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-[0_20px_60px_-15px_oklch(0_0_0/0.7)] p-3 animate-fade-in">
+                    <>
+                      {/* Mobile Backdrop */}
+                      <div 
+                        className="fixed inset-0 z-[90] bg-background/40 backdrop-blur-sm sm:hidden" 
+                        onClick={() => setMenuOpen(false)} 
+                      />
+                      <div className="fixed sm:absolute top-[80px] sm:top-full left-4 right-4 sm:left-auto sm:right-0 sm:mt-2 w-auto sm:w-72 z-[100] rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-[0_20px_60px_-15px_oklch(0_0_0/0.7)] p-3 animate-fade-in">
                       {/* Header */}
                       <div className="flex items-center gap-2.5 px-1 py-1">
                         <div className="h-9 w-9 rounded-xl border border-border/60 bg-background/60 flex items-center justify-center text-xs font-bold text-foreground overflow-hidden shrink-0">
@@ -287,7 +293,8 @@ export function Navbar() {
                       >
                         <LogOut className="h-4 w-4" /> Sign out
                       </button>
-                    </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </>
@@ -316,7 +323,12 @@ export function Navbar() {
 
         {/* Mobile menu */}
         {open && (
-          <div className="md:hidden mt-2 rounded-2xl border border-border/60 bg-background/90 backdrop-blur-xl p-2 animate-fade-in">
+          <>
+            <div 
+              className="fixed inset-0 z-[80] bg-background/40 backdrop-blur-sm md:hidden" 
+              onClick={() => setOpen(false)} 
+            />
+            <div className="fixed md:hidden top-[80px] left-4 right-4 z-[90] rounded-2xl border border-border/60 bg-background/90 backdrop-blur-xl p-2 animate-fade-in shadow-2xl">
             <Link
               href="/"
               onClick={(e) => {
@@ -375,7 +387,8 @@ export function Navbar() {
                 </button>
               </>
             )}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </header>

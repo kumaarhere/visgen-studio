@@ -40,7 +40,7 @@ import {
   generateImage,
   deleteImage,
   toggleLikeImage,
-  uploadImage,
+  getCloudinarySignature,
 } from "@/app/actions";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
@@ -191,16 +191,32 @@ export default function StudioPage() {
 
     setUploading(true);
     try {
+      // Get secure signature from server
+      const { signature, timestamp, apiKey, cloudName } = await getCloudinarySignature();
+
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("api_key", apiKey!);
+      formData.append("timestamp", timestamp.toString());
+      formData.append("signature", signature);
+      formData.append("folder", "visgen-references");
 
-      const result = await uploadImage(formData);
-      if (result.url) {
-        setImageRefs(prev => [...prev, result.url]);
+      // Upload directly to Cloudinary from client (bypasses Vercel payload limits)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) throw new Error("Upload to Cloudinary failed");
+      
+      const result = await uploadRes.json();
+      if (result.secure_url) {
+        setImageRefs(prev => [...prev, result.secure_url]);
         toast.success("Image reference added!");
       }
     } catch (err: any) {
-      toast.error(err.message || "Image upload failed");
+      console.error("Upload error:", err);
+      toast.error("Image upload failed. Try a smaller file.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

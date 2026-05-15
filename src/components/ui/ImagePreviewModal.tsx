@@ -42,7 +42,7 @@ export function ImagePreviewModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-10">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-6 lg:p-10">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -58,7 +58,7 @@ export function ImagePreviewModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-5xl max-h-[90vh] md:max-h-none overflow-y-auto md:overflow-hidden rounded-3xl bg-surface/40 border border-border/50 shadow-2xl flex flex-col md:flex-row"
+            className="relative w-full max-w-5xl max-h-[95vh] md:max-h-none overflow-y-auto md:overflow-hidden rounded-3xl bg-surface/40 border border-border/50 shadow-2xl flex flex-col md:flex-row"
           >
             {/* Close Button (Mobile) */}
             <button
@@ -73,12 +73,12 @@ export function ImagePreviewModal({
               <img
                 src={imageUrl}
                 alt={prompt}
-                className="max-w-full max-h-[70vh] md:max-h-[85vh] object-contain shadow-2xl"
+                className="max-w-full max-h-[65vh] md:max-h-[85vh] object-contain shadow-2xl"
               />
             </div>
 
             {/* Sidebar / Info Area */}
-            <div className="w-full md:w-[320px] p-6 sm:p-8 flex flex-col justify-between bg-surface/20 backdrop-blur-xl border-t md:border-t-0 md:border-l border-border/40">
+            <div className="w-full md:w-[320px] p-4 sm:p-8 flex flex-col justify-between bg-surface/20 backdrop-blur-xl border-t md:border-t-0 md:border-l border-border/40">
               <div>
                 <div className="flex items-center justify-between mb-6 hidden md:flex">
                   <span className="text-[10px] font-bold tracking-widest uppercase text-primary/80">Image Detail</span>
@@ -91,7 +91,7 @@ export function ImagePreviewModal({
                 </div>
 
                 <h3 className="text-sm font-semibold text-foreground/70 mb-3">Prompt</h3>
-                <div className="p-4 rounded-2xl bg-background/40 border border-border/40 mb-6 max-h-[220px] md:max-h-[400px] overflow-y-auto no-scrollbar flex flex-col justify-start">
+                <div className="p-4 rounded-2xl bg-background/40 border border-border/40 mb-4 md:mb-6 max-h-[220px] md:max-h-[400px] overflow-y-auto no-scrollbar flex flex-col justify-start">
                   <p className="text-sm leading-relaxed text-foreground/90 italic text-left">
                     "{prompt}"
                   </p>
