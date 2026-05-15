@@ -49,7 +49,7 @@ export function Features() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-[280px] gap-4 lg:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-4 lg:gap-5">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
@@ -57,7 +57,7 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
-              className={`relative rounded-3xl overflow-hidden group border border-border/40 hover:border-primary/50 transition-colors bg-surface/80 backdrop-blur-md ${f.className}`}
+              className={`relative rounded-3xl overflow-hidden group border border-border/40 hover:border-primary/50 transition-colors bg-surface/80 backdrop-blur-md min-h-[280px] ${f.className}`}
             >
               {/* Background Image */}
               <div className="absolute inset-0">

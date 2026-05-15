@@ -218,7 +218,7 @@ export default function AuthPage() {
             </div>
 
             {/* Right: The Auth Form */}
-            <div className="p-8 sm:p-10 bg-background/20 backdrop-blur-md">
+            <div className="p-6 sm:p-10 bg-background/20 backdrop-blur-md">
               <div className="w-full max-w-[320px] mx-auto">
                 {/* Mode toggle */}
                 <div className="flex p-1 rounded-xl bg-surface/40 border border-white/[0.06] mb-6 gap-1">

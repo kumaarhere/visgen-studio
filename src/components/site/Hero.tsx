@@ -42,6 +42,25 @@ export function Hero() {
   const { user } = useAuth();
   const [indexes, setIndexes] = useState([0, 1, 2, 3, 4, 5, 6, 7]);
   const [dragging, setDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const responsiveVariants = {
+    center: { x: "0%", scale: 1, zIndex: 10, rotateY: 0, opacity: 1, filter: "blur(0px)" },
+    right1: { x: isMobile ? "50%" : "85%", scale: 0.8, zIndex: 8, rotateY: -15, opacity: 0.85, filter: "blur(0px)" },
+    right2: { x: isMobile ? "90%" : "150%", scale: 0.6, zIndex: 6, rotateY: -25, opacity: 0.6, filter: "blur(2px)" },
+    right3: { x: isMobile ? "120%" : "190%", scale: 0.4, zIndex: 4, rotateY: -35, opacity: 0, filter: "blur(4px)" },
+    back: { x: "0%", scale: 0.3, zIndex: 2, rotateY: 0, opacity: 0, filter: "blur(4px)" },
+    left3: { x: isMobile ? "-120%" : "-190%", scale: 0.4, zIndex: 4, rotateY: 35, opacity: 0, filter: "blur(4px)" },
+    left2: { x: isMobile ? "-90%" : "-150%", scale: 0.6, zIndex: 6, rotateY: 25, opacity: 0.6, filter: "blur(2px)" },
+    left1: { x: isMobile ? "-50%" : "-85%", scale: 0.8, zIndex: 8, rotateY: 15, opacity: 0.85, filter: "blur(0px)" },
+  };
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -105,7 +124,7 @@ export function Hero() {
             return (
               <motion.div
                 key={i}
-                variants={variants}
+                variants={responsiveVariants}
                 animate={posName}
                 initial={false}
                 transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
