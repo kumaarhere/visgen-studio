@@ -127,7 +127,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="h-screen overflow-hidden relative flex flex-col items-center">
+    <div className="min-h-screen overflow-y-auto relative flex flex-col items-center">
       {/* Background layers for linewave visibility */}
       <div className="fixed inset-0 bg-background z-[-3]" />
       <BackgroundCanvas />
@@ -150,7 +150,7 @@ export default function AuthPage() {
         </Link>
       </header>
 
-      <main className="flex-1 w-full max-w-7xl px-6 flex flex-col items-center justify-center relative z-10 overflow-hidden">
+      <main className="flex-1 w-full max-w-7xl px-6 py-12 flex flex-col items-center justify-center relative z-10">
         
         {/* Rearranged Content: A single large integrated container */}
         <div className="w-full max-w-5xl flex flex-col items-center gap-6">
@@ -267,13 +267,12 @@ export default function AuthPage() {
                   <span className="font-medium text-xs">Google</span>
                 </Button>
 
-                <div className="relative my-5 flex items-center justify-center">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                  </div>
-                  <span className="relative px-3 text-[9px] font-bold tracking-[0.3em] uppercase text-muted-foreground/30 bg-transparent backdrop-blur-sm">
+                <div className="relative my-5 flex items-center gap-3">
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent to-white/10" />
+                  <span className="shrink-0 text-[9px] font-bold tracking-[0.3em] uppercase text-muted-foreground/40">
                     OR
                   </span>
+                  <div className="flex-1 h-[1px] bg-gradient-to-l from-transparent to-white/10" />
                 </div>
 
                 <form onSubmit={handleEmail} className="space-y-3.5">

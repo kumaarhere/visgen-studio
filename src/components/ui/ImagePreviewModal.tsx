@@ -54,10 +54,11 @@ export function ImagePreviewModal({
 
           {/* Modal Content */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-5xl max-h-full overflow-hidden rounded-3xl bg-surface/40 border border-border/50 shadow-2xl flex flex-col md:flex-row"
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-5xl max-h-[90vh] md:max-h-none overflow-y-auto md:overflow-hidden rounded-3xl bg-surface/40 border border-border/50 shadow-2xl flex flex-col md:flex-row"
           >
             {/* Close Button (Mobile) */}
             <button

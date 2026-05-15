@@ -293,9 +293,9 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Button asChild variant="glow" size="sm" className="rounded-full font-display">
+                <Button asChild variant="glow" size="sm" className="rounded-full font-display px-3 sm:px-4">
                   <Link href="/auth" className="flex items-center justify-center gap-2">
-                    Get started
+                    <span className="hidden sm:inline">Get started</span>
                     <Palette className="h-4 w-4" />
                   </Link>
                 </Button>
